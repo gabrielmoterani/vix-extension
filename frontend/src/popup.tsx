@@ -1,24 +1,29 @@
+// src/popup.tsx
 import { useState } from "react"
 
 function IndexPopup() {
-  const [data, setData] = useState("")
+  const [loading, setLoading] = useState(false)
+
+  const handleAnalyze = () => {
+    setLoading(true)
+    console.log("Analisando página...")
+    chrome.runtime.sendMessage({ action: "analyze-page" }, (res) => {
+      setLoading(false)
+      console.log("Resposta do backend: ", res)
+      if (res?.status === "ok") {
+        alert("Acessibilidade aplicada com sucesso!")
+      } else {
+        alert("Erro ao aplicar acessibilidade.")
+      }
+    })
+  }
 
   return (
-    <div
-      style={{
-        padding: 16
-      }}>
-      <h2>
-        Welcome to your{" "}
-        <a href="https://www.plasmo.com">
-          Plasmo
-        </a>{" "}
-        Extension! {data}
-      </h2>
-      <input onChange={(e) => setData(e.target.value)} value={data} />
-      <a href="https://docs.plasmo.com">
-        View Docs
-      </a>
+    <div style={{ padding: 16, fontFamily: "sans-serif" }}>
+      <h1>AccessiAI</h1>
+      <button onClick={handleAnalyze} disabled={loading}>
+        {loading ? "Analisando..." : "Melhorar acessibilidade"}
+      </button>
     </div>
   )
 }
