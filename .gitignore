@@ -1,0 +1,75 @@
+# Global
+.DS_Store
+Thumbs.db
+.env
+.env.*
+*.log
+*.sqlite3
+*.pyc
+__pycache__/
+*.swp
+
+# Node (Frontend React)
+**/node_modules/
+frontend/node_modules/
+**/dist/
+**/.next/
+**/out/
+**/build/
+**/.turbo/
+**/.parcel-cache/
+**/coverage/
+**/vite.svg
+
+# Yarn / NPM / PNPM
+**/yarn.lock
+**/package-lock.json
+**/pnpm-lock.yaml
+
+# React Native / Expo (se usado no futuro)
+*.expo/
+*.expo-shared/
+.expo/
+
+# Python (Poetry + venv)
+**/.venv/
+**/venv/
+**/.mypy_cache/
+**/.pytest_cache/
+**/.ruff_cache/
+**/.coverage
+**/.tox/
+**/.pdm.toml
+**/poetry.lock
+**/__pypackages__/
+
+# VS Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# PyCharm
+.idea/
+
+# Editor backups
+*~ 
+*.bak
+
+# Localstack / AWS
+.localstack/
+
+# Docker
+**/docker-compose.override.yml
+**/Dockerfile.local
+**/docker-data/
+
+# Optional: ignore screenshots or test assets
+**/screenshots/
+**/test_outputs/
+
+# Optional: ignore generated API clients/docs
+**/docs/
+**/openapi/
+
+# Linting
+.pylint.d/
