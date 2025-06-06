@@ -19,6 +19,7 @@ import { ProcessPageUseCase } from '~src/use-cases/ProcessPageUseCase';
 import { Readability } from '@mozilla/readability';
 import * as axe from 'axe-core';
 import { AdBlock } from '~src/external-libs/AdBlock';
+import { ReactPresentationBridge } from '~src/services/ReactPresentationBridge';
 
 
 export class DIContainer {
@@ -104,6 +105,10 @@ export class DIContainer {
     
     container.register(TOKENS.DomModifier, {
       useClass: DomModifier
+    });
+
+    container.register(TOKENS.ReactPresentationBridge, {
+      useClass: ReactPresentationBridge
     });
   }
   

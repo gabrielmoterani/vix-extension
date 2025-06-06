@@ -25,5 +25,7 @@ export const TOKENS = {
   
   // External Libraries
   AdBlock: Symbol('AdBlock'),
-  WcagCheck: Symbol('WcagCheck')
+  WcagCheck: Symbol('WcagCheck'),
+
+  ReactPresentationBridge: Symbol('ReactPresentationBridge'),
 } as const;
