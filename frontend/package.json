@@ -12,6 +12,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@ghostery/adblocker-webextension": "^2.7.0",
     "@mozilla/readability": "^0.4.1",
     "@plasmohq/messaging": "^0.7.1",
     "@tailwindcss/postcss": "^4.1.8",

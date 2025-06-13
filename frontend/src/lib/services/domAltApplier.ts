@@ -1,3 +1,5 @@
+import { cacheManager } from './cacheManager'
+
 /**
  * Serviço para aplicar alt text gerado às imagens no DOM
  */
@@ -34,6 +36,9 @@ export class DomAltApplier {
 
       // Criar indicador visual
       this.createVisualIndicator(element, altText)
+
+      // Invalidate WCAG cache since accessibility has changed
+      cacheManager.invalidateWcagCache()
 
       console.log(
         `VIX: Alt text aplicado ao elemento ${elementId}:`,

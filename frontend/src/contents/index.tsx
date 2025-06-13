@@ -6,6 +6,7 @@ import { DomFixApplier } from "../lib/services/domFixApplier"
 import { DomProcessingService } from "../lib/services/domProcessingService"
 import { WcagCheckService } from "../lib/services/wcagCheckService"
 import { ReadabilityService } from "../lib/services/readabilityService"
+import { AdBlockService } from "../lib/services/adBlockService"
 
 export const getStyle = (): HTMLStyleElement => {
   const baseFontSize = 16
@@ -35,6 +36,7 @@ const domService = new DomProcessingService(readabilityService)
 const altApplier = new DomAltApplier()
 const wcagService = new WcagCheckService()
 const fixApplier = new DomFixApplier()
+const adBlockService = new AdBlockService()
 let jsPermissionGranted = false
 
 // Função para verificar se elemento deve ser pulado
@@ -220,8 +222,8 @@ const detectPageChange = () => {
     altApplier.reset()
 
     // Aguardar DOM carregar e processar nova página
-    setTimeout(() => {
-      initialize()
+    setTimeout(async () => {
+      await initialize()
     }, 1000)
   }
 }
@@ -350,8 +352,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 })
 
 // Inicialização quando página carrega
-const initialize = () => {
+const initialize = async () => {
   console.log("VIX: Content script inicializado para:", window.location.href)
+
+  // Primeiro, remover anúncios da DOM antes de qualquer processamento
+  try {
+    console.log("VIX: Removendo anúncios da página...")
+    const adBlockResult = await adBlockService.removeAdsFromDOM(document)
+    console.log(`VIX: Anúncios removidos: ${adBlockResult.removedCount} elementos`)
+    if (adBlockResult.processedSelectors.length > 0) {
+      console.log("VIX: Seletores processados:", adBlockResult.processedSelectors)
+    }
+  } catch (error) {
+    console.error("VIX: Erro ao remover anúncios:", error)
+  }
 
   // Processamento básico atual
   const basicStats = processAndAnalyzeDOM()
@@ -393,7 +407,11 @@ const initialize = () => {
         readabilityUsed: shouldUseReadability
       })
 
-      // Resto da lógica continua igual...
+      // Log cache statistics
+      const cacheStats = domService.getCacheStats()
+      console.log("VIX: Cache statistics:", cacheStats)
+
+      // Incluir dados de imagem nas notificações
       const enhancedStats = {
         ...basicStats,
         imagesNeedingAlt: imagesNeedingAlt.length
@@ -487,7 +505,7 @@ const requestPageSummary = async (text: string) => {
 
 // Executar quando DOM estiver pronto
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initialize)
+  document.addEventListener("DOMContentLoaded", () => initialize())
 } else {
   initialize()
 }

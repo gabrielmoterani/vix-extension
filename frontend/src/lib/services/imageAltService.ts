@@ -1,4 +1,5 @@
 import { backendClient } from "../api/backendClient"
+import { globalCache, CacheKeyGenerator } from './cacheService'
 
 export interface ImageAltJob {
   id: string
@@ -73,12 +74,26 @@ export class ImageAltService {
     try {
       console.log(`VIX: Processando imagem ${id}:`, url.substring(0, 50) + '...')
       
-      const result = await backendClient.requestImageAlt(url, summary)
+      // Check cache first
+      const cacheKey = CacheKeyGenerator.imageAlt(url, summary)
+      const cachedAlt = globalCache.get<string>(cacheKey)
       
-      job.status = 'completed'
-      job.altText = result.response
-      
-      console.log(`VIX: Alt text gerado para ${id}:`, result.response.substring(0, 100) + '...')
+      if (cachedAlt) {
+        console.log(`VIX: Alt text encontrado no cache para ${id}`)
+        job.status = 'completed'
+        job.altText = cachedAlt
+      } else {
+        // Request from backend
+        const result = await backendClient.requestImageAlt(url, summary)
+        
+        job.status = 'completed'
+        job.altText = result.response
+        
+        // Cache the result with longer TTL since alt texts are expensive to generate
+        globalCache.set(cacheKey, result.response, 2 * 60 * 60 * 1000) // 2 hours
+        
+        console.log(`VIX: Alt text gerado para ${id}:`, result.response.substring(0, 100) + '...')
+      }
       
     } catch (error) {
       console.error(`VIX: Erro ao processar imagem ${id}:`, error)

@@ -1,4 +1,5 @@
 import type { ArticleContent, ReadabilityResult, ReadabilityService } from './readabilityService'
+import { globalCache, CacheKeyGenerator } from './cacheService'
 
 // Tipos para representar elementos processados
 export interface ProcessedElement {
@@ -40,6 +41,7 @@ export interface DomStats {
 
 export class DomProcessingService {
   private origin: string
+  private processedElementsCache = new Map<string, ProcessedElement>()
 
   constructor(private readonly readabilityService: ReadabilityService) {
     this.origin = window.location.origin
@@ -124,12 +126,30 @@ export class DomProcessingService {
       return null
     }
 
-    // Criar elemento processado
-    const processed: ProcessedElement = {
+    // Generate cache key for this element
+    const elementSignature = {
       tag: element.tagName?.toLowerCase() || '',
       attributes: this.processAttributes(element),
+      text: this.extractText(element)
+    }
+    
+    const cacheKey = CacheKeyGenerator.domElement(elementSignature)
+    
+    // Check cache first (but only for elements without data-vix to avoid ID conflicts)
+    if (!element.getAttribute('data-vix')) {
+      const cached = this.processedElementsCache.get(cacheKey)
+      if (cached) {
+        // Return cached element with new unique ID if needed
+        return { ...cached }
+      }
+    }
+
+    // Criar elemento processado
+    const processed: ProcessedElement = {
+      tag: elementSignature.tag,
+      attributes: elementSignature.attributes,
       children: [],
-      text: this.extractText(element),
+      text: elementSignature.text,
       isActionElement: this.isActionElement(element),
       isImage: this.isImageElement(element),
       id: element.getAttribute('data-vix') || ''
@@ -141,6 +161,11 @@ export class DomProcessingService {
       if (processedChild) {
         processed.children.push(processedChild)
       }
+    }
+
+    // Cache the processed element (but only if it doesn't have a data-vix ID)
+    if (!processed.id) {
+      this.processedElementsCache.set(cacheKey, { ...processed })
     }
 
     return processed
@@ -233,6 +258,15 @@ export class DomProcessingService {
 
   // Extrair todo texto para resumo
   extractAllText(processedDom: ProcessedElement): string {
+    // Generate cache key based on DOM structure
+    const domStructureKey = this.generateDomStructureHash(processedDom)
+    const cacheKey = CacheKeyGenerator.pageSummary(domStructureKey)
+    
+    const cached = globalCache.get<string>(cacheKey)
+    if (cached) {
+      return cached
+    }
+
     const texts: string[] = []
 
     const walkElements = (element: ProcessedElement) => {
@@ -246,7 +280,12 @@ export class DomProcessingService {
     }
 
     walkElements(processedDom)
-    return texts.join(' ')
+    const result = texts.join(' ')
+    
+    // Cache the extracted text with medium TTL
+    globalCache.set(cacheKey, result, 15 * 60 * 1000) // 15 minutes
+    
+    return result
   }
 
   // Gerar estatísticas completas
@@ -361,10 +400,20 @@ export class DomProcessingService {
   }
 
   private processUrl(url: string): string {
-    if (this.isLocalUrl(url)) {
-      return this.origin + url
+    // Check cache for processed URL
+    const cacheKey = CacheKeyGenerator.processedUrl(url, this.origin)
+    const cached = globalCache.get<string>(cacheKey)
+    
+    if (cached) {
+      return cached
     }
-    return url
+
+    const processedUrl = this.isLocalUrl(url) ? this.origin + url : url
+    
+    // Cache the processed URL with longer TTL since URLs don't change often
+    globalCache.set(cacheKey, processedUrl, 60 * 60 * 1000) // 1 hour
+    
+    return processedUrl
   }
 
   private isLocalUrl(url: string): boolean {
@@ -429,6 +478,48 @@ export class DomProcessingService {
       return hasImageExtension || parsedUrl.pathname.includes('image') || parsedUrl.search.includes('image')
     } catch {
       return false
+    }
+  }
+
+  // Helper method to generate a hash representing the DOM structure
+  private generateDomStructureHash(element: ProcessedElement): string {
+    const structure = this.serializeElementStructure(element)
+    let hash = 0
+    for (let i = 0; i < structure.length; i++) {
+      const char = structure.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash // Convert to 32-bit integer
+    }
+    return Math.abs(hash).toString(36)
+  }
+
+  private serializeElementStructure(element: ProcessedElement): string {
+    const parts = [
+      element.tag,
+      Object.keys(element.attributes).sort().join(','),
+      element.text.substring(0, 100) // Limit text for hashing
+    ]
+    
+    const childStructures = element.children.map(child => 
+      this.serializeElementStructure(child)
+    )
+    
+    return `${parts.join('|')}[${childStructures.join(',')}]`
+  }
+
+  // Method to clear local cache
+  clearCache(): void {
+    this.processedElementsCache.clear()
+  }
+
+  // Method to get cache statistics
+  getCacheStats(): {
+    localCacheSize: number
+    globalCacheStats: any
+  } {
+    return {
+      localCacheSize: this.processedElementsCache.size,
+      globalCacheStats: globalCache.getStats()
     }
   }
 }
