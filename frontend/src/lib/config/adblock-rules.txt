@@ -1,0 +1,78 @@
+! VIX Extension Custom Ad Block Rules
+! Este arquivo contém regras customizadas para bloqueio de anúncios
+! Baseado no formato EasyList/uBlock Origin
+
+! === Regras Gerais de Anúncios ===
+! Bloquear elementos comuns de anúncios
+##.ad
+##.ads
+##.advertisement
+##.banner
+##.sponsored
+##.promo
+##[class*="ad-"]
+##[class*="ads-"]
+##[id*="ad-"]
+##[id*="ads-"]
+
+! === Domínios de Anúncios Comuns ===
+||googleads.g.doubleclick.net^
+||googlesyndication.com^
+||googleadservices.com^
+||google-analytics.com^
+||facebook.com/tr^
+||connect.facebook.net^
+
+! === Scripts de Tracking ===
+||google-analytics.com/analytics.js$script
+||google-analytics.com/ga.js$script
+||googletagmanager.com/gtag/js$script
+||facebook.com/tr$script
+
+! === Elementos Específicos Brasileiros ===
+! Blocos de anúncios em sites brasileiros comuns
+##.publicidade
+##.anuncio
+##.banner-publicidade
+##[class*="publicidade"]
+##[id*="publicidade"]
+
+! === Pop-ups e Overlays ===
+##.popup
+##.overlay
+##.modal-ad
+##[class*="popup"]
+##[style*="position: fixed"][style*="z-index"]
+
+! === Sidebar e Footer Ads ===
+##.sidebar-ad
+##.footer-ad
+##.header-ad
+##[class*="sidebar-ad"]
+##[class*="footer-ad"]
+
+! === Redes Sociais Embeds Indesejados ===
+||platform.twitter.com/widgets.js$script
+||connect.facebook.net/*/sdk.js$script
+
+! === Regras para Elementos por Tamanho ===
+! Bloquear elementos com dimensões típicas de banner
+##[width="728"][height="90"]
+##[width="300"][height="250"]
+##[width="160"][height="600"]
+##[width="970"][height="250"]
+
+! === Regras Anti-Adblock ===
+! Remover scripts que detectam ad blockers
+##.adblock-message
+##.ad-blocker-message
+##[id*="adblock"]
+##[class*="adblock"]
+
+! === Regras de Performance ===
+! Bloquear recursos pesados desnecessários
+||doubleclick.net^$important
+||googlesyndication.com^$important
+||amazon-adsystem.com^$important
+
+! === Fim das Regras Customizadas ===
