@@ -1,10 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { generateUniqueId, processAndAnalyzeDOM } from './services/domProcessor'
+import { isSkippableElement, isActionElement, isImageElement } from './utils/elementUtils'
+
 vi.mock('data-text:~style.css', () => ({ default: '' }))
 
 const loadModule = async () => {
   const g: any = global
   g.chrome = { runtime: { onMessage: { addListener: vi.fn() }, sendMessage: vi.fn() } }
-  return await import('./index')
+  return {
+    generateUniqueId,
+    isSkippableElement,
+    isActionElement,
+    isImageElement,
+    processAndAnalyzeDOM
+  }
 }
 
 describe('content helpers', () => {

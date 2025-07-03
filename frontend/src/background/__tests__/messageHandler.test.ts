@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import * as handler from '../handlers/messageHandler'
+import { getBackgroundState } from '../state/backgroundState'
 
 vi.mock('../../lib/api/backendClient', () => ({
   backendClient: {
@@ -21,27 +22,27 @@ beforeEach(() => {
 describe('message handlers', () => {
   it('updateCurrentTab stores tab info', () => {
     handler.updateCurrentTab(1, 'u', 'active')
-    expect(handler.getBackgroundState().currentTab).toEqual({ id: 1, url: 'u', status: 'active' })
+    expect(getBackgroundState().currentTab).toEqual({ id: 1, url: 'u', status: 'active' })
   })
 
   it('handleDomUpdated updates stats', async () => {
     const req = { body: { elementsWithIds: 1, totalElements: 2, actionElements: 1, images: 1, imagesNeedingAlt: 0 } }
     const res = { send: vi.fn() }
     await handler.handleDomUpdated(req as any, res as any)
-    expect(res.send).toHaveBeenCalledWith({ success: true, state: handler.getBackgroundState() })
-    expect(handler.getBackgroundState().domStats.totalElements).toBe(2)
+    expect(res.send).toHaveBeenCalledWith({ success: true, state: getBackgroundState() })
+    expect(getBackgroundState().domStats.totalElements).toBe(2)
   })
 
   it('handleGetState returns state', async () => {
     const res = { send: vi.fn() }
     await handler.handleGetState({} as any, res as any)
-    expect(res.send).toHaveBeenCalledWith({ success: true, state: handler.getBackgroundState() })
+    expect(res.send).toHaveBeenCalledWith({ success: true, state: getBackgroundState() })
   })
 
   it('handleSummaryRequest stores summary', async () => {
     const res = { send: vi.fn() }
     await handler.handleSummaryRequest({ body: { text: 't', url: 'u' } } as any, res as any)
     expect(res.send).toHaveBeenCalledWith({ success: true, summary: 'sum' })
-    expect(handler.getBackgroundState().summary).toBe('sum')
+    expect(getBackgroundState().summary).toBe('sum')
   })
 })
