@@ -49,5 +49,8 @@
   "success_label": {"message": "✅ Success"},
   "warning_label": {"message": "⚠️ Warning"},
   "error_label": {"message": "❌ Error"},
-  "accessibility_label": {"message": "Accessibility"}
+  "accessibility_label": {"message": "Accessibility"},
+  "tab_essential": {"message": "Essential"},
+  "tab_analysis": {"message": "Analysis"},
+  "main_navigation": {"message": "Main navigation"}
 }

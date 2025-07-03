@@ -11,6 +11,7 @@ import { ImageAltProgressCard } from "./components/ImageAltProgressCard"
 import { StatsList } from "./components/StatsList"
 import { StatusCard } from "./components/StatusCard"
 import { SummaryCard } from "./components/SummaryCard"
+import { TabsContainer } from "./components/TabsContainer"
 import { WcagIssuesCard } from "./components/WcagIssuesCard"
 
 function IndexSidePanel() {
@@ -237,36 +238,51 @@ function IndexSidePanel() {
         </div>
       </header>
 
-      <div
-        className="vix-space-y-4"
-        role="region"
-        aria-label={t("dom_stats_section")}>
-        <StatusCard title={t("dom_status")} variant="success" icon="🔍">
-          <StatsList stats={domStats} />
-        </StatusCard>
-
-        <ImageAltProgressCard
-          total={imageAltState.total}
-          completed={imageAltState.completed}
-          failed={imageAltState.failed}
-          inProgress={imageAltState.inProgress}
-          isProcessing={imageAltState.isProcessing}
-          onStartProcessing={handleStartImageProcessing}
-        />
-
-        <WcagIssuesCard issues={wcagIssues} />
-
-        <SummaryCard
-          summary={summaryState.summary}
-          isLoading={summaryState.isLoading}
-          error={summaryState.error}
-          metadata={summaryState.metadata}
-        />
-        <ChatInterface
-          isReady={!!summaryState.summary}
-          disabled={summaryState.isLoading}
-        />
-      </div>
+      <TabsContainer
+        defaultTab="essential"
+        tabs={[
+          {
+            id: "essential",
+            label: t("tab_essential"),
+            icon: "⭐",
+            content: (
+              <div className="vix-space-y-4">
+                <SummaryCard
+                  summary={summaryState.summary}
+                  isLoading={summaryState.isLoading}
+                  error={summaryState.error}
+                  metadata={summaryState.metadata}
+                />
+                <ChatInterface
+                  isReady={!!summaryState.summary}
+                  disabled={summaryState.isLoading}
+                />
+              </div>
+            )
+          },
+          {
+            id: "analysis",
+            label: t("tab_analysis"),
+            icon: "📊",
+            content: (
+              <div className="vix-space-y-4">
+                <StatusCard title={t("dom_status")} variant="success" icon="🔍">
+                  <StatsList stats={domStats} />
+                </StatusCard>
+                <ImageAltProgressCard
+                  total={imageAltState.total}
+                  completed={imageAltState.completed}
+                  failed={imageAltState.failed}
+                  inProgress={imageAltState.inProgress}
+                  isProcessing={imageAltState.isProcessing}
+                  onStartProcessing={handleStartImageProcessing}
+                />
+                <WcagIssuesCard issues={wcagIssues} />
+              </div>
+            )
+          }
+        ]}
+      />
     </main>
   )
 }

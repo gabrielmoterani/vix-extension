@@ -7,6 +7,7 @@ export interface ImageAltJob {
   status: 'pending' | 'processing' | 'completed' | 'failed'
   altText?: string
   error?: string
+  isBackground?: boolean
 }
 
 export interface ImageAltProgress {
@@ -23,7 +24,7 @@ export class ImageAltService {
   private activeRequests = 0
 
   async processImages(
-    imageUrls: Array<{id: string, url: string}>, 
+    imageUrls: Array<{id: string, url: string, isBackground?: boolean}>, 
     pageSummary: string,
     onProgress?: (progress: ImageAltProgress) => void
   ): Promise<ImageAltProgress> {
@@ -32,22 +33,23 @@ export class ImageAltService {
     
     // Inicializar jobs
     this.jobs.clear()
-    imageUrls.forEach(({id, url}) => {
+    imageUrls.forEach(({id, url, isBackground}) => {
       this.jobs.set(id, {
         id,
         url,
-        status: 'pending'
+        status: 'pending',
+        isBackground: isBackground || false
       })
     })
 
     // Processar imagens em lotes
-    const promises = imageUrls.map(async ({id, url}) => {
+    const promises = imageUrls.map(async ({id, url, isBackground}) => {
       // Aguardar slot disponível
       while (this.activeRequests >= this.concurrentLimit) {
         await new Promise(resolve => setTimeout(resolve, 100))
       }
 
-      return this.processingleImage(id, url, pageSummary, onProgress)
+      return this.processingleImage(id, url, pageSummary, onProgress, isBackground)
     })
 
     await Promise.allSettled(promises)
@@ -62,7 +64,8 @@ export class ImageAltService {
     id: string, 
     url: string, 
     summary: string,
-    onProgress?: (progress: ImageAltProgress) => void
+    onProgress?: (progress: ImageAltProgress) => void,
+    isBackground?: boolean
   ): Promise<void> {
     this.activeRequests++
     
@@ -72,19 +75,24 @@ export class ImageAltService {
     onProgress?.(this.getProgress())
 
     try {
-      console.log(`VIX: Processando imagem ${id}:`, url.substring(0, 50) + '...')
+      const imageType = isBackground ? 'background-image' : 'imagem'
+      console.log(`VIX: Processando ${imageType} ${id}:`, url.substring(0, 50) + '...')
       
       // Check cache first
       const cacheKey = CacheKeyGenerator.imageAlt(url, summary)
       const cachedAlt = globalCache.get<string>(cacheKey)
       
       if (cachedAlt) {
-        console.log(`VIX: Alt text encontrado no cache para ${id}`)
+        console.log(`VIX: Alt text encontrado no cache para ${imageType} ${id}`)
         job.status = 'completed'
         job.altText = cachedAlt
       } else {
-        // Request from backend
-        const result = await backendClient.requestImageAlt(url, summary)
+        // Request from backend with context about background images
+        const contextSummary = isBackground ? 
+          `${summary}\n\nNOTA: Esta é uma imagem de background de um elemento HTML. Gere uma descrição focada no conteúdo visual da imagem.` : 
+          summary
+          
+        const result = await backendClient.requestImageAlt(url, contextSummary)
         
         job.status = 'completed'
         job.altText = result.response
@@ -92,7 +100,7 @@ export class ImageAltService {
         // Cache the result with longer TTL since alt texts are expensive to generate
         globalCache.set(cacheKey, result.response, 2 * 60 * 60 * 1000) // 2 hours
         
-        console.log(`VIX: Alt text gerado para ${id}:`, result.response.substring(0, 100) + '...')
+        console.log(`VIX: Alt text gerado para ${imageType} ${id}:`, result.response.substring(0, 100) + '...')
       }
       
     } catch (error) {

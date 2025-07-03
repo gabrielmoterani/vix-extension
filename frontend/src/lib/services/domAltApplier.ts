@@ -1,10 +1,12 @@
 import { cacheManager } from './cacheManager'
+import { BackgroundImageProcessor } from './backgroundImageProcessor'
 
 /**
  * Serviço para aplicar alt text gerado às imagens no DOM
  */
 export class DomAltApplier {
   private appliedIds = new Set<string>()
+  private appliedBackgroundIds = new Set<string>()
 
   /**
    * Aplica alt text a uma imagem específica
@@ -55,16 +57,73 @@ export class DomAltApplier {
   }
 
   /**
-   * Aplica alt text a múltiplas imagens
+   * Aplica alt text a um elemento com background-image
+   */
+  applyBackgroundAltText(elementId: string, altText: string): boolean {
+    try {
+      // Encontrar elemento por data-vix ID
+      const element = document.querySelector(`[data-vix="${elementId}"]`)
+
+      if (!element) {
+        console.warn(`VIX: Elemento com ID ${elementId} não encontrado`)
+        return false
+      }
+
+      // Verificar se tem background-image
+      const backgroundUrl = BackgroundImageProcessor.extractBackgroundImageUrl(element)
+      if (!backgroundUrl) {
+        console.warn(`VIX: Elemento ${elementId} não tem background-image`)
+        return false
+      }
+
+      // Aplicar alt text usando BackgroundImageProcessor
+      const success = BackgroundImageProcessor.applyAltText(element, altText)
+      
+      if (success) {
+        // Marcar como aplicado
+        this.appliedBackgroundIds.add(elementId)
+
+        // Criar indicador visual para background images
+        this.createBackgroundVisualIndicator(element, altText)
+
+        // Invalidate WCAG cache since accessibility has changed
+        cacheManager.invalidateWcagCache()
+
+        console.log(
+          `VIX: Alt text aplicado a background-image ${elementId}:`,
+          altText.substring(0, 50) + "..."
+        )
+      }
+
+      return success
+    } catch (error) {
+      console.error(
+        `VIX: Erro ao aplicar alt text a background-image ${elementId}:`,
+        error
+      )
+      return false
+    }
+  }
+
+  /**
+   * Aplica alt text a múltiplas imagens (normais e background)
    */
   applyMultipleAltTexts(
-    results: Array<{ id: string; altText?: string; error?: string }>
+    results: Array<{ id: string; altText?: string; error?: string; isBackground?: boolean }>
   ): number {
     let successCount = 0
 
     results.forEach((result) => {
       if (result.altText && !result.error) {
-        if (this.applyAltText(result.id, result.altText)) {
+        let success = false
+        
+        if (result.isBackground) {
+          success = this.applyBackgroundAltText(result.id, result.altText)
+        } else {
+          success = this.applyAltText(result.id, result.altText)
+        }
+        
+        if (success) {
           successCount++
         }
       } else if (result.error) {
@@ -129,6 +188,49 @@ export class DomAltApplier {
   }
 
   /**
+   * Cria indicador visual para elementos com background-image
+   */
+  private createBackgroundVisualIndicator(element: Element, altText: string): void {
+    // Remover indicador existente se houver
+    const existingIndicator = element.querySelector(".vix-bg-alt-indicator")
+    existingIndicator?.remove()
+
+    const overlay = document.createElement("div")
+    overlay.className = "vix-bg-alt-indicator"
+    overlay.setAttribute("aria-label", `Descrição automática de background: ${altText}`)
+    overlay.style.cssText = `
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      background: rgba(0, 123, 255, 0.8);
+      color: #fff;
+      font-size: 10px;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 3px;
+      z-index: 1001;
+      pointer-events: none;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-weight: 500;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      max-width: calc(100% - 8px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    `
+    overlay.textContent = "🖼️ ALT"
+    overlay.title = altText
+
+    // Garantir que o elemento pai tenha position relative
+    const computedStyle = window.getComputedStyle(element)
+    if (computedStyle.position === 'static') {
+      (element as HTMLElement).style.position = 'relative'
+    }
+
+    element.appendChild(overlay)
+  }
+
+  /**
    * Verifica se alt text já foi aplicado a um elemento
    */
   isAlreadyApplied(elementId: string): boolean {
@@ -136,10 +238,17 @@ export class DomAltApplier {
   }
 
   /**
+   * Verifica se alt text já foi aplicado a um elemento background
+   */
+  isBackgroundAlreadyApplied(elementId: string): boolean {
+    return this.appliedBackgroundIds.has(elementId)
+  }
+
+  /**
    * Remove indicadores visuais de todas as imagens
    */
   removeAllIndicators(): void {
-    const indicators = document.querySelectorAll(".vix-alt-indicator")
+    const indicators = document.querySelectorAll(".vix-alt-indicator, .vix-bg-alt-indicator")
     indicators.forEach((indicator) => indicator.remove())
 
     console.log(`VIX: Removidos ${indicators.length} indicadores visuais`)
@@ -148,10 +257,19 @@ export class DomAltApplier {
   /**
    * Obtém estatísticas sobre alt texts aplicados
    */
-  getStats(): { appliedCount: number; appliedIds: string[] } {
+  getStats(): { 
+    appliedCount: number; 
+    appliedIds: string[];
+    backgroundAppliedCount: number;
+    backgroundAppliedIds: string[];
+    totalAppliedCount: number;
+  } {
     return {
       appliedCount: this.appliedIds.size,
-      appliedIds: Array.from(this.appliedIds)
+      appliedIds: Array.from(this.appliedIds),
+      backgroundAppliedCount: this.appliedBackgroundIds.size,
+      backgroundAppliedIds: Array.from(this.appliedBackgroundIds),
+      totalAppliedCount: this.appliedIds.size + this.appliedBackgroundIds.size
     }
   }
 
@@ -160,6 +278,7 @@ export class DomAltApplier {
    */
   reset(): void {
     this.appliedIds.clear()
+    this.appliedBackgroundIds.clear()
     this.removeAllIndicators()
     console.log("VIX: DomAltApplier resetado")
   }
