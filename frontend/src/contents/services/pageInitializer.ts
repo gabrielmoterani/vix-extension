@@ -2,6 +2,7 @@ import { DomProcessingService } from "../../lib/services/domProcessingService"
 import { AdBlockService } from "../../lib/services/adBlockService"
 import { WcagCheckService } from "../../lib/services/wcagCheckService"
 import { DomAltApplier } from "../../lib/services/domAltApplier"
+import { BackgroundImageProcessor } from "../../lib/services/backgroundImageProcessor"
 import { processAndAnalyzeDOM } from "./domProcessor"
 import { setupDomObserver } from "../observers/domObserver"
 
@@ -117,10 +118,15 @@ export const initialize = async (
       // Filtrar imagens que precisam de alt text
       const imagesNeedingAlt = domService.filterImagesNeedingAlt(images)
       
+      // Detectar elementos com background-image que precisam de alt text
+      const backgroundImages = BackgroundImageProcessor.detectBackgroundImages()
+      const backgroundImagesNeedingAlt = backgroundImages.filter(img => img.needsAlt)
+      
       console.log("VIX: Estatísticas avançadas:", {
         ...advancedStats,
         ...stats,
         imagesNeedingAlt: imagesNeedingAlt.length,
+        backgroundImagesNeedingAlt: backgroundImagesNeedingAlt.length,
         actionElements: actions.length,
         readabilityUsed: shouldUseReadability
       })
@@ -129,21 +135,30 @@ export const initialize = async (
       const cacheStats = domService.getCacheStats()
       console.log("VIX: Cache statistics:", cacheStats)
 
-      // Incluir dados de imagem nas notificações
+      // Incluir dados de imagem nas notificações (incluindo background images)
+      const totalImagesNeedingAlt = imagesNeedingAlt.length + backgroundImagesNeedingAlt.length
       const enhancedStats = {
         ...basicStats,
-        imagesNeedingAlt: imagesNeedingAlt.length
+        imagesNeedingAlt: totalImagesNeedingAlt
       }
 
-      if (imagesNeedingAlt.length > 0) {
-        const imageUrls = domService.getProcessableImageUrls(imagesNeedingAlt)
+      // Processar imagens normais e background juntas
+      if (imagesNeedingAlt.length > 0 || backgroundImagesNeedingAlt.length > 0) {
+        const normalImageUrls = domService.getProcessableImageUrls(imagesNeedingAlt)
+        const backgroundImageUrls = BackgroundImageProcessor.toImageAltFormat(backgroundImagesNeedingAlt)
+          .map(img => ({ ...img, isBackground: true }))
+
+        const allImageUrls = [...normalImageUrls, ...backgroundImageUrls]
+        
         chrome.runtime.sendMessage({
           type: "IMAGES_DETECTED",
           body: {
-            images: imageUrls,
+            images: allImageUrls,
             url: window.location.href
           }
         })
+        
+        console.log(`VIX: Detectadas ${normalImageUrls.length} imagens normais e ${backgroundImageUrls.length} background-images`)
       }
 
       if (textForSummary.length > 500 && !hasGeneratedSummary) {
@@ -157,7 +172,7 @@ export const initialize = async (
       }
 
       setupDomObserver((stats) => notifyBackgroundDomUpdated(stats))
-      notifyBackgroundDomUpdated(enhancedStats, imagesNeedingAlt.length)
+      notifyBackgroundDomUpdated(enhancedStats, totalImagesNeedingAlt)
 
       wcagService.runCheck().then((issues) => {
         chrome.runtime.sendMessage({
