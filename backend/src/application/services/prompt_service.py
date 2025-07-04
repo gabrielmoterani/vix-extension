@@ -1,6 +1,7 @@
 from src.domain.models.prompt import Prompt
 from src.infrastructure.repositories.openai_repository import OpenAIRepository
 
+
 class PromptService:
     def __init__(self):
         self.openai_repo = OpenAIRepository()
@@ -21,14 +22,32 @@ class PromptService:
         return prompt
 
     def execute_page_task(self, html_content: str, task_prompt: str, page_summary: str) -> Prompt:
+        """
+        Executa uma tarefa na página usando OpenAI
+        
+        Args:
+            html_content: Lista de elementos interativos da página (JSON)
+            task_prompt: Instrução do usuário sobre o que fazer
+            page_summary: Resumo do conteúdo da página
+            
+        Returns:
+            Prompt com resposta contendo explanation e js_commands
+        """
+        print('VIX: Executando tarefa na página - elementos:', len(html_content) if isinstance(html_content, list) else 'não é lista')
+        
+        # Criar prompt com dados estruturados
         prompt = Prompt(prompt_type="page_task", content={
             "html_content": html_content,
             "task_prompt": task_prompt,
             "page_summary": page_summary
         })
+        
+        # Processar através do repositório OpenAI
         prompt.response = self.openai_repo.process_page_task(
             html_content=html_content,
             task_prompt=task_prompt,
             page_summary=page_summary
         )
+        
+        print('VIX: Tarefa processada, resposta:', prompt.response[:100] + '...' if len(prompt.response) > 100 else prompt.response)
         return prompt

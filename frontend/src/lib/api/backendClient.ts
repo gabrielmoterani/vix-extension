@@ -199,7 +199,11 @@ export class BackendClient {
 }
 
 // Instância singleton do cliente
-export const backendClient = new BackendClient({
-  baseUrl: "https://vix-monorepo.fly.dev/api",
-  timeout: 30000 // 30s timeout
-})
+// export const backendClient = new BackendClient({
+//   baseUrl: "https://vix-monorepo.fly.dev/api",
+//   timeout: 30000 // 30s timeout
+// })
+ export const backendClient = new BackendClient({
+   baseUrl: "http://localhost:8080/api",
+   timeout: 30000 // 30s timeout
+ })

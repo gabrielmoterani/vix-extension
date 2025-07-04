@@ -5,13 +5,16 @@ import {
   handleImageAltRequest,
   handleImagesDetected,
   handleSummaryRequest,
-  handleWcagIssuesDetected
+  handleWcagIssuesDetected,
+  handleUpdateActionElements
 } from "../handlers/messageHandler"
 
 export const setupMessageRouter = () => {
   // Sistema de mensagens robusto
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const tabId = sender.tab?.id || 0
+    
+    console.log("#TODEBUG: MESSAGE ROUTER - Mensagem recebida:", message.type || message.name)
 
     switch (message.name || message.type) {
       case "dom-updated":
@@ -38,6 +41,8 @@ export const setupMessageRouter = () => {
 
       case "chat-request":
       case "CHAT_REQUEST":
+        console.log("#TODEBUG: MESSAGE ROUTER - Processando CHAT_REQUEST")
+        console.log("#TODEBUG: MESSAGE ROUTER - Dados:", message.body || message.data)
         handleChatRequest(
           { body: message.body || message.data } as any,
           { send: sendResponse } as any
@@ -62,6 +67,13 @@ export const setupMessageRouter = () => {
 
       case "WCAG_ISSUES_DETECTED":
         handleWcagIssuesDetected(
+          { body: message.body || message.data } as any,
+          { send: sendResponse } as any
+        )
+        break
+
+      case "UPDATE_ACTION_ELEMENTS":
+        handleUpdateActionElements(
           { body: message.body || message.data } as any,
           { send: sendResponse } as any
         )

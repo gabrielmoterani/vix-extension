@@ -74,3 +74,32 @@ export const notifyWcagIssues = (issues: any[]) => {
     body: { issues }
   })
 }
+
+/**
+ * Envia actionElements para o background independentemente do resumo
+ * Útil para casos onde o resumo já foi gerado mas os actionElements não foram enviados
+ */
+export const sendActionElements = async (actionElements: any[]) => {
+  try {
+    console.log("VIX: Enviando actionElements diretamente:", actionElements.length)
+    
+    chrome.runtime.sendMessage(
+      {
+        type: "UPDATE_ACTION_ELEMENTS",
+        body: {
+          actionElements,
+          url: window.location.href
+        }
+      },
+      (response) => {
+        if (response?.success) {
+          console.log("VIX: ActionElements enviados com sucesso")
+        } else {
+          console.error("VIX: Erro ao enviar actionElements:", response?.error)
+        }
+      }
+    )
+  } catch (error) {
+    console.error("VIX: Erro ao enviar actionElements:", error)
+  }
+}

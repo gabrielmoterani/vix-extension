@@ -4,6 +4,7 @@ export { handleSummaryRequest } from "./summaryHandler"
 export { handleChatRequest } from "./chatHandler"
 export { handleImageAltRequest, handleImagesDetected } from "./imageHandler"
 export { handleWcagIssuesDetected } from "./wcagHandler"
+export { handleUpdateActionElements } from "./actionElementsHandler"
 
 // Re-export state management functions
 export { updateCurrentTab } from "../state/backgroundState"

@@ -51,6 +51,11 @@ export class TextExtractor {
     value?: string
     placeholder?: string
     ariaLabel?: string
+    name?: string
+    role?: string
+    elementType?: string
+    isInput?: boolean
+    isClickable?: boolean
   }> {
     const actions: Array<{
       id: string
@@ -61,10 +66,24 @@ export class TextExtractor {
       value?: string
       placeholder?: string
       ariaLabel?: string
+      name?: string
+      role?: string
+      elementType?: string
+      isInput?: boolean
+      isClickable?: boolean
     }> = []
 
     const walkElements = (element: ProcessedElement) => {
       if (element.isActionElement) {
+        // Determinar tipo do elemento para melhor contexto
+        const isInput = ['input', 'textarea', 'select'].includes(element.tag.toLowerCase())
+        const isClickable = ['button', 'a'].includes(element.tag.toLowerCase()) || element.attributes.onclick
+        
+        let elementType = element.tag.toLowerCase()
+        if (element.tag.toLowerCase() === 'input' && element.attributes.type) {
+          elementType = `input[${element.attributes.type}]`
+        }
+
         const action = {
           id: element.id,
           tag: element.tag,
@@ -73,11 +92,16 @@ export class TextExtractor {
           type: element.attributes.type,
           value: element.attributes.value,
           placeholder: element.attributes.placeholder,
-          ariaLabel: element.attributes['aria-label']
+          ariaLabel: element.attributes['aria-label'],
+          name: element.attributes.name,
+          role: element.attributes.role,
+          elementType,
+          isInput,
+          isClickable
         }
 
-        // Só adicionar se tem informação útil
-        if (action.text || action.href || action.ariaLabel) {
+        // Incluir elementos com informação útil ou que são inputs/clickables importantes
+        if (action.text || action.href || action.ariaLabel || action.placeholder || isInput || isClickable) {
           actions.push(action)
         }
       }

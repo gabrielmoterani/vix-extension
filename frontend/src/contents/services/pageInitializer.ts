@@ -24,7 +24,7 @@ export const initialize = async (
   console.log("VIX: Estatísticas básicas:", basicStats)
 
   // 3. Processamento avançado
-  const analysisResult = performAdvancedDomAnalysis(domService)
+  const analysisResult = await performAdvancedDomAnalysis(domService)
   
   if (analysisResult.success) {
     // Sucesso no processamento avançado

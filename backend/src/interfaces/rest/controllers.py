@@ -34,11 +34,23 @@ def summarize_page():
 
 @api_blueprint.route('/execute_page_task', methods=['POST'])
 def execute_page_task():
+    """
+    Executa uma tarefa na página baseada em elementos interativos
+    
+    Recebe:
+    - html_content: Lista de elementos interativos da página
+    - task_prompt: Instrução do usuário sobre o que fazer
+    - page_summary: Resumo do conteúdo da página
+    
+    Retorna:
+    - response: JSON com explanation e js_commands
+    """
     data = request.json
     html_content = data.get('html_content')
     task_prompt = data.get('task_prompt')
     page_summary = data.get('page_summary')
     
+    # Validar parâmetros obrigatórios
     if not html_content:
         return jsonify({'error': 'No HTML content provided'}), 400
     
@@ -48,6 +60,7 @@ def execute_page_task():
     if not page_summary:
         return jsonify({'error': 'No page summary provided'}), 400
     
+    # Processar tarefa através do serviço
     result = prompt_service.execute_page_task(
         html_content=html_content,
         task_prompt=task_prompt,

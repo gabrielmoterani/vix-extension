@@ -27,6 +27,8 @@ export function ChatInterface({ isReady, disabled = false }: ChatInterfaceProps)
     const messageListener = (message: any) => {
       if (message.type === "CHAT_RESPONSE" && message.data.conversationId === conversationId.current) {
         console.log('VIX: Resposta do chat recebida:', message.data)
+        console.log("#TODEBUG: Mensagem completa recebida:", JSON.stringify(message, null, 2))
+        console.log("#TODEBUG: jsCommands recebidos:", message.data.jsCommands)
         
         const assistantMessage: ChatMessage = {
           id: Math.random().toString(36).substr(2, 9),
@@ -40,7 +42,10 @@ export function ChatInterface({ isReady, disabled = false }: ChatInterfaceProps)
 
         // Executar comandos JS se houver
         if (message.data.jsCommands?.length > 0) {
+          console.log("#TODEBUG: Executando comandos JS:", message.data.jsCommands)
           executeJsCommands(message.data.jsCommands)
+        } else {
+          console.log("#TODEBUG: NENHUM COMANDO JS PARA EXECUTAR!")
         }
       }
 
@@ -64,16 +69,28 @@ export function ChatInterface({ isReady, disabled = false }: ChatInterfaceProps)
 
   const executeJsCommands = async (commands: string[]) => {
     console.log('VIX: Executando comandos JS:', commands)
+    console.log("#TODEBUG: Iniciando execução de", commands.length, "comandos")
 
-    for (const command of commands) {
+    for (let i = 0; i < commands.length; i++) {
+      const command = commands[i]
+      console.log(`#TODEBUG: Executando comando ${i + 1}/${commands.length}:`, command)
+      
       try {
         // Enviar comando para content script executar
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+        console.log("#TODEBUG: Tab ativa encontrada:", tab?.id)
+        
         if (tab.id) {
           chrome.tabs.sendMessage(
             tab.id,
             { type: "EXECUTE_JS", command },
             (response) => {
+              console.log(`#TODEBUG: Resposta do comando ${i + 1}:`, response)
+              if (response?.success) {
+                console.log("#TODEBUG: Comando executado com SUCESSO!")
+              } else {
+                console.log("#TODEBUG: Comando FALHOU:", response?.error)
+              }
               chrome.runtime.sendMessage({
                 type: "EXECUTE_JS_RESULT",
                 data: {
@@ -85,9 +102,11 @@ export function ChatInterface({ isReady, disabled = false }: ChatInterfaceProps)
               })
             }
           )
+        } else {
+          console.log("#TODEBUG: ERRO - Nenhuma tab ativa encontrada!")
         }
       } catch (error) {
-        console.error('VIX: Erro ao executar comando:', error)
+        console.error('#TODEBUG: Erro ao executar comando:', error)
       }
     }
   }
@@ -107,6 +126,10 @@ export function ChatInterface({ isReady, disabled = false }: ChatInterfaceProps)
     setInputValue("")
 
     // Enviar para background
+    console.log("#TODEBUG: CHAT INTERFACE - Enviando mensagem para background")
+    console.log("#TODEBUG: CHAT INTERFACE - Mensagem:", userMessage.content)
+    console.log("#TODEBUG: CHAT INTERFACE - ConversationId:", conversationId.current)
+    
     chrome.runtime.sendMessage({
       type: "CHAT_REQUEST",
       body: {

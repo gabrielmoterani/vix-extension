@@ -1,6 +1,6 @@
 import { DomProcessingService } from "../../lib/services/domProcessingService"
 import { detectAndProcessImages, notifyBackgroundAboutImages } from "./imageDetectionService"
-import { requestPageSummary } from "./backgroundCommunicator"
+import { requestPageSummary, sendActionElements } from "./backgroundCommunicator"
 
 export interface DomAnalysisResult {
   success: boolean
@@ -13,9 +13,9 @@ export interface DomAnalysisResult {
 
 let hasGeneratedSummary = false
 
-export const performAdvancedDomAnalysis = (
+export const performAdvancedDomAnalysis = async (
   domService: DomProcessingService
-): DomAnalysisResult => {
+): Promise<DomAnalysisResult> => {
   console.log("VIX: Iniciando processamento avançado...")
   
   const processingResult = domService.processDocumentWithReadability(document)
@@ -81,6 +81,17 @@ export const performAdvancedDomAnalysis = (
 
   // Verificar se deve solicitar resumo
   const shouldRequestSummary = textForSummary.length > 500 && !hasGeneratedSummary
+
+  // Sempre enviar actionElements, mesmo se o resumo já foi gerado
+  if (actions.length > 0) {
+    console.log("VIX: Enviando actionElements extraídos:", actions.length)
+    console.log("#TODEBUG: Total de ActionElements:", actions.length)
+    console.log("#TODEBUG: Primeiros 10 ActionElements:", JSON.stringify(actions.slice(0, 10), null, 2))
+    console.log("#TODEBUG: ActionElements com texto relevante:", actions.filter(a => a.text && a.text.length > 3).slice(0, 10))
+    await sendActionElements(actions)
+  } else {
+    console.log("#TODEBUG: NENHUM ACTION ELEMENT EXTRAÍDO!")
+  }
 
   return {
     success: true,
