@@ -170,8 +170,90 @@ export const setupMessageHandler = (altApplier: DomAltApplier, fixApplier: DomFi
           }
         }
         
-        // Executar o comando em um contexto seguro
-        const result = new Function(sanitized)()
+        // Executar o comando de forma mais robusta
+        let result;
+        
+        // Se é um comando de alterar valor, usar método mais robusto
+        if (sanitized.includes('.value =')) {
+          const match = sanitized.match(/document\.querySelector\(\s*\['data-vix="([^"]+)"\'\]\)\.value\s*=\s*['"]([^'"]*)['"]/);
+          if (match) {
+            const [, vixId, newValue] = match;
+            const element = document.querySelector(`[data-vix="${vixId}"]`) as HTMLInputElement | HTMLTextAreaElement;
+            
+            if (element) {
+              console.log("#TODEBUG: Usando método robusto para alterar valor");
+              
+              // Focar no elemento primeiro
+              element.focus();
+              
+              // Alterar o valor
+              element.value = newValue;
+              
+              // Disparar eventos que frameworks esperam
+              const events = ['input', 'change', 'blur'];
+              events.forEach(eventType => {
+                const event = new Event(eventType, { bubbles: true });
+                element.dispatchEvent(event);
+              });
+              
+              // Para React especificamente
+              const reactEvent = new Event('input', { bubbles: true });
+              Object.defineProperty(reactEvent, 'target', { value: element });
+              element.dispatchEvent(reactEvent);
+              
+              console.log("#TODEBUG: Valor alterado e eventos disparados:", newValue);
+              result = newValue;
+            } else {
+              throw new Error(`Elemento não encontrado: ${vixId}`);
+            }
+          } else {
+            // Fallback para comando original
+            result = new Function(sanitized)();
+          }
+        }
+        // Se é um comando de click, usar método mais robusto  
+        else if (sanitized.includes('.click()')) {
+          const match = sanitized.match(/document\.querySelector\(\s*\['data-vix="([^"]+)"\'\]\)\.click\(\)/);
+          if (match) {
+            const [, vixId] = match;
+            const element = document.querySelector(`[data-vix="${vixId}"]`) as HTMLElement;
+            
+            if (element) {
+              console.log("#TODEBUG: Usando método robusto para click");
+              
+              // Scroll para o elemento se necessário
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              
+              // Aguardar um pouco para o scroll
+              setTimeout(() => {
+                // Disparar eventos de mouse completos
+                const events = ['mousedown', 'mouseup', 'click'];
+                events.forEach(eventType => {
+                  const event = new MouseEvent(eventType, {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window
+                  });
+                  element.dispatchEvent(event);
+                });
+                
+                console.log("#TODEBUG: Click executado com eventos completos");
+              }, 100);
+              
+              result = 'clicked';
+            } else {
+              throw new Error(`Elemento não encontrado: ${vixId}`);
+            }
+          } else {
+            // Fallback para comando original
+            result = new Function(sanitized)();
+          }
+        }
+        else {
+          // Para outros comandos, usar método original
+          result = new Function(sanitized)();
+        }
+        
         console.log("#TODEBUG: Comando executado com sucesso:", result)
         console.log("VIX: Comando executado com sucesso:", result)
         
