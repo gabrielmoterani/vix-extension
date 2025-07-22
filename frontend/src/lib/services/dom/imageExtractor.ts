@@ -71,6 +71,19 @@ export class ImageExtractor {
   }
 
   /**
+   * Converte imagens para formato de URLs processáveis com alt original
+   */
+  static getProcessableImageUrlsWithAlt(images: ProcessedImage[]): Array<{id: string, url: string, originalAlt?: string}> {
+    return images
+      .filter(img => ElementAnalyzer.isValidImageUrl(img.src))
+      .map(img => ({
+        id: img.id,
+        url: img.src,
+        originalAlt: img.alt
+      }))
+  }
+
+  /**
    * Verifica se uma imagem precisa de alt text
    */
   private static shouldAddAltText(element: ProcessedElement): boolean {

@@ -131,6 +131,11 @@ export class DomProcessingService {
     return ImageExtractor.getProcessableImageUrls(images)
   }
 
+  // Delegated method for image analysis feature
+  getProcessableImageUrlsWithAlt(images: ProcessedImage[]): Array<{id: string, url: string, originalAlt?: string}> {
+    return ImageExtractor.getProcessableImageUrlsWithAlt(images)
+  }
+
   // Delegated method for backward compatibility
   isValidImageUrl(url: string): boolean {
     return true // Moved to ElementAnalyzer.isValidImageUrl

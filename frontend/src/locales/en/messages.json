@@ -52,5 +52,20 @@
   "accessibility_label": {"message": "Accessibility"},
   "tab_essential": {"message": "Essential"},
   "tab_analysis": {"message": "Analysis"},
-  "main_navigation": {"message": "Main navigation"}
+  "tab_image_analysis": {"message": "Image Analysis"},
+  "main_navigation": {"message": "Main navigation"},
+  "image_analysis_title": {"message": "Page Image Analysis"},
+  "image_analysis_description": {"message": "View all images and their alternative descriptions"},
+  "original_alt": {"message": "Original alt"},
+  "generated_alt": {"message": "AI generated alt"},
+  "alt_empty": {"message": "No alt text"},
+  "alt_generic": {"message": "Generic alt"},
+  "loading_image": {"message": "Loading image..."},
+  "image_thumbnail": {"message": "Image thumbnail"},
+  "no_images_found": {"message": "No images found on this page"},
+  "image_status_pending": {"message": "Pending processing"},
+  "image_status_processing": {"message": "Processing..."},
+  "image_status_completed": {"message": "Completed"},
+  "image_status_failed": {"message": "Failed"},
+  "view_full_image": {"message": "View full image"}
 }

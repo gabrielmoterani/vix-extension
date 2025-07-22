@@ -36,14 +36,18 @@ export const handleImagesDetected: PlasmoMessaging.MessageHandler = async (
   // Armazenar imagens que precisam de alt text
   updateImagesNeedingAlt(images)
 
+  // Enviar imagens para o sidepanel
+  chrome.runtime.sendMessage({
+    type: "IMAGES_DETECTED",
+    data: { images }
+  })
+
+  // Reativar processamento automático de IA
   try {
     await startImageAltProcessing()
-    res.send({ success: true })
   } catch (error) {
-    console.error(
-      "VIX: Erro ao iniciar processamento automático de alt:",
-      error
-    )
-    res.send({ success: false })
+    console.error("VIX: Erro ao iniciar processamento automático de alt:", error)
   }
+
+  res.send({ success: true })
 }

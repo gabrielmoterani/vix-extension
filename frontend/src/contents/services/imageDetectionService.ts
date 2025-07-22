@@ -6,9 +6,9 @@ export interface ImageDetectionResult {
   normalImages: any[]
   backgroundImages: any[]
   totalCount: number
-  normalImageUrls: Array<{id: string, url: string}>
+  normalImageUrls: Array<{id: string, url: string, originalAlt?: string}>
   backgroundImageUrls: Array<{id: string, url: string, isBackground: boolean}>
-  allImageUrls: Array<{id: string, url: string, isBackground?: boolean}>
+  allImageUrls: Array<{id: string, url: string, originalAlt?: string, isBackground?: boolean}>
 }
 
 export const detectAndProcessImages = (
@@ -31,8 +31,8 @@ export const detectAndProcessImages = (
     totalImages: imagesNeedingAlt.length + backgroundImagesNeedingAlt.length
   })
 
-  // Preparar URLs para processamento
-  const normalImageUrls = domService.getProcessableImageUrls(imagesNeedingAlt)
+  // Preparar URLs para processamento com alt original
+  const normalImageUrls = domService.getProcessableImageUrlsWithAlt(imagesNeedingAlt)
   const backgroundImageUrls = BackgroundImageProcessor.toImageAltFormat(backgroundImagesNeedingAlt)
     .map(img => ({ ...img, isBackground: true }))
 

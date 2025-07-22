@@ -6,6 +6,7 @@ export interface ImageAltJob {
   url: string
   status: 'pending' | 'processing' | 'completed' | 'failed'
   altText?: string
+  originalAlt?: string
   error?: string
   isBackground?: boolean
 }
@@ -24,7 +25,7 @@ export class ImageAltService {
   private activeRequests = 0
 
   async processImages(
-    imageUrls: Array<{id: string, url: string, isBackground?: boolean}>, 
+    imageUrls: Array<{id: string, url: string, originalAlt?: string, isBackground?: boolean}>, 
     pageSummary: string,
     onProgress?: (progress: ImageAltProgress) => void
   ): Promise<ImageAltProgress> {
@@ -33,17 +34,18 @@ export class ImageAltService {
     
     // Inicializar jobs
     this.jobs.clear()
-    imageUrls.forEach(({id, url, isBackground}) => {
+    imageUrls.forEach(({id, url, originalAlt, isBackground}) => {
       this.jobs.set(id, {
         id,
         url,
+        originalAlt,
         status: 'pending',
         isBackground: isBackground || false
       })
     })
 
     // Processar imagens em lotes
-    const promises = imageUrls.map(async ({id, url, isBackground}) => {
+    const promises = imageUrls.map(async ({id, url, originalAlt, isBackground}) => {
       // Aguardar slot disponível
       while (this.activeRequests >= this.concurrentLimit) {
         await new Promise(resolve => setTimeout(resolve, 100))

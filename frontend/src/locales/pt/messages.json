@@ -52,5 +52,20 @@
   "accessibility_label": {"message": "Acessibilidade"},
   "tab_essential": {"message": "Essencial"},
   "tab_analysis": {"message": "Análise"},
-  "main_navigation": {"message": "Navegação principal"}
+  "tab_image_analysis": {"message": "Análise de Imagens"},
+  "main_navigation": {"message": "Navegação principal"},
+  "image_analysis_title": {"message": "Análise de Imagens da Página"},
+  "image_analysis_description": {"message": "Visualize todas as imagens e suas descrições alternativas"},
+  "original_alt": {"message": "Alt original"},
+  "generated_alt": {"message": "Alt gerado por IA"},
+  "alt_empty": {"message": "Sem alt text"},
+  "alt_generic": {"message": "Alt genérico"},
+  "loading_image": {"message": "Carregando imagem..."},
+  "image_thumbnail": {"message": "Miniatura da imagem"},
+  "no_images_found": {"message": "Nenhuma imagem encontrada nesta página"},
+  "image_status_pending": {"message": "Aguardando processamento"},
+  "image_status_processing": {"message": "Processando..."},
+  "image_status_completed": {"message": "Concluído"},
+  "image_status_failed": {"message": "Falhou"},
+  "view_full_image": {"message": "Ver imagem completa"}
 }
