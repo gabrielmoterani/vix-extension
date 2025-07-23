@@ -320,12 +320,138 @@ export class ImageFilterService {
   }
 
   /**
+   * Verifica indicadores de que a imagem é conteúdo principal
+   */
+  private static checkContentIndicators(
+    image: ProcessedImage,
+    element: Element | undefined
+  ): ImageFilterResult {
+    const indicators: string[] = []
+    let confidence = 0.6
+    
+    // Verificar se está dentro de um elemento <picture>
+    if (element) {
+      const pictureParent = element.closest('picture')
+      if (pictureParent) {
+        indicators.push('elemento <picture>')
+        confidence += 0.2
+        
+        // Verificar classes do elemento picture
+        const pictureClasses = Array.from(pictureParent.classList)
+        const featuredClasses = ['featured', 'hero', 'main', 'primary', 'article', 'content']
+        
+        if (this.containsAny(pictureClasses, featuredClasses)) {
+          indicators.push('picture com classe de conteúdo')
+          confidence += 0.2
+        }
+      }
+      
+      // Verificar classes da própria imagem
+      const imageClasses = Array.from(element.classList)
+      const contentClasses = [
+        'featured', 'hero', 'main', 'primary', 'article', 'content',
+        'editorial', 'story', 'news', 'post', 'highlight'
+      ]
+      
+      if (this.containsAny(imageClasses, contentClasses)) {
+        indicators.push('classes indicam conteúdo principal')
+        confidence += 0.3
+      }
+      
+      // Verificar classes específicas mais precisas
+      const specificContentClasses = [
+        'featured-image', 'primaryImage', 'type:primaryImage', 
+        'main-image', 'article-image', 'story-image',
+        'hero-image', 'banner-image', 'highlight-image'
+      ]
+      
+      if (this.containsAny(imageClasses, specificContentClasses)) {
+        indicators.push('classe específica de imagem principal')
+        confidence += 0.4
+      }
+      
+      // Verificar se tem atributos que indicam importância
+      const width = element.getAttribute('width')
+      const height = element.getAttribute('height')
+      if (width && height) {
+        const w = parseInt(width)
+        const h = parseInt(height)
+        if (w >= 400 || h >= 300) {
+          indicators.push('dimensões grandes especificadas')
+          confidence += 0.1
+        }
+      }
+    }
+    
+    // Verificar padrões no alt text que indicam pessoas/conteúdo editorial
+    if (image.alt) {
+      const altText = image.alt.trim()
+      
+      // Nomes próprios (começam com maiúscula e contêm espaços)
+      if (/^[A-Z][a-z]+ [A-Z]/.test(altText)) {
+        indicators.push('alt text parece ser nome de pessoa')
+        confidence += 0.2
+      }
+      
+      // Descrições editoriais típicas
+      const editorialPatterns = [
+        /\b(photo|image)\s+by\b/i,
+        /\b(getty|reuters|ap|associated press)\b/i,
+        /\b(shows?|depicts?|features?)\b/i,
+        /\b(during|at|in)\s+\w+/i
+      ]
+      
+      if (editorialPatterns.some(pattern => pattern.test(altText))) {
+        indicators.push('alt text editorial')
+        confidence += 0.2
+      }
+    }
+    
+    // Verificar padrões na URL que indicam conteúdo editorial
+    const urlPatterns = [
+      /wp-content\/uploads/i,  // WordPress uploads
+      /images?\/(article|story|news|post)/i,
+      /uploads?\/(content|media|editorial)/i,
+      /\d{4}\/\d{2}\/[\w-]+\.(jpg|jpeg|png|webp)/i  // Data no path
+    ]
+    
+    if (urlPatterns.some(pattern => pattern.test(image.src))) {
+      indicators.push('URL indica conteúdo editorial')
+      confidence += 0.15
+    }
+    
+    if (indicators.length > 0 && confidence >= 0.9) {
+      return {
+        shouldProcess: true,
+        reason: `Imagem principal identificada: ${indicators.join(', ')}`,
+        category: 'content',
+        confidence: Math.min(confidence, 0.95)
+      }
+    }
+    
+    return {
+      shouldProcess: indicators.length > 0,
+      reason: indicators.length > 0 ? 
+        `Possível conteúdo: ${indicators.join(', ')}` : 
+        'Nenhum indicador de conteúdo principal',
+      category: 'content',
+      confidence
+    }
+  }
+
+  /**
    * Verifica atributos da imagem para determinar propósito
    */
   private static checkImageAttributes(
     image: ProcessedImage,
     element: Element | undefined
   ): ImageFilterResult {
+    // Verificar se é uma imagem principal/featured/editorial
+    const contentIndicators = this.checkContentIndicators(image, element)
+    if (contentIndicators.shouldProcess && contentIndicators.confidence >= 0.9) {
+      return contentIndicators
+    }
+    
     // Se já tem alt text significativo (> 20 caracteres), processar sempre
     // pois o objetivo é melhorar alt texts existentes
     if (image.alt && image.alt.length > 20) {

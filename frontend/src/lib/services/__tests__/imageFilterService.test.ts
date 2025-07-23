@@ -32,6 +32,7 @@ const createMockElement = (overrides: Partial<Element> = {}): Element => {
     getBoundingClientRect: mockGetBoundingClientRect,
     textContent: '',
     id: '',
+    closest: vi.fn(() => null),
     ...overrides
   } as unknown as Element
 
@@ -213,6 +214,66 @@ describe('ImageFilterService', () => {
 
       expect(result.shouldProcess).toBe(true)
       expect(result.category).toBe('content')
+    })
+
+    it('should recognize featured images in picture elements', () => {
+      const image = createMockImage({
+        alt: 'Bonnie Critchley.',
+        src: 'https://smartcdn.gprod.postmedia.digital/nationalpost/wp-content/uploads/2025/07/Bonnie-Critchley-1.jpg'
+      })
+      
+      // Mock picture element
+      const pictureElement = createMockElement({
+        tagName: 'PICTURE',
+        classList: ['featured-image__ratio']
+      })
+      
+      const element = createMockElement({
+        classList: ['featured-image__image', 'type:primaryImage'],
+        getAttribute: vi.fn((attr) => {
+          if (attr === 'width') return '1000'
+          if (attr === 'height') return '750'
+          return null
+        }),
+        closest: vi.fn((selector) => {
+          if (selector === 'picture') return pictureElement
+          return null
+        })
+      })
+
+      const result = ImageFilterService.shouldProcessImage(image, element)
+
+      expect(result.shouldProcess).toBe(true)
+      expect(result.category).toBe('content')
+      expect(result.confidence).toBe(0.8)
+      expect(result.reason).toContain('conteúdo principal')
+    })
+
+    it('should recognize editorial images by alt text patterns', () => {
+      const image = createMockImage({
+        alt: 'Getty Images A truck drives along a backroad, with electric poles',
+        src: 'https://ichef.bbci.co.uk/news/480/cpsprodpb/48ab/live/image.jpg'
+      })
+
+      const result = ImageFilterService.shouldProcessImage(image)
+
+      expect(result.shouldProcess).toBe(true)
+      expect(result.category).toBe('content')
+      // Como tem > 20 caracteres no alt, será processado por essa regra
+      expect(result.reason).toContain('conteúdo principal')
+    })
+
+    it('should recognize WordPress content images', () => {
+      const image = createMockImage({
+        src: 'https://example.com/wp-content/uploads/2025/07/article-image.jpg'
+      })
+
+      const result = ImageFilterService.shouldProcessImage(image)
+
+      expect(result.shouldProcess).toBe(true)
+      expect(result.category).toBe('content')
+      // URL não atinge confiança suficiente sozinha, mas ainda é processada
+      expect(result.reason).toContain('conteúdo principal')
     })
   })
 
