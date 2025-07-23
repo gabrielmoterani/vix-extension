@@ -44,17 +44,8 @@ export class ImageExtractor {
       // Pular gifs e svgs (geralmente decorativos)
       if (img.src.includes('.gif') || img.src.includes('.svg')) return false
       
-      // Verificar se alt existe e é significativo
-      if (!img.alt) return true
-      
-      // Alt muito curto ou genérico
-      if (img.alt.length < 10) return true
-      
-      // Alt genérico comum
-      const genericAlts = ['image', 'img', 'photo', 'picture', 'icon', 'logo']
-      if (genericAlts.some(generic => img.alt!.toLowerCase().includes(generic))) return true
-      
-      return false
+      // Usar a mesma lógica consolidada
+      return this.shouldProcessImage(img.alt)
     })
   }
 
@@ -71,21 +62,43 @@ export class ImageExtractor {
   }
 
   /**
-   * Verifica se uma imagem precisa de alt text
+   * Converte imagens para formato de URLs processáveis com alt original
    */
-  private static shouldAddAltText(element: ProcessedElement): boolean {
-    const alt = element.attributes.alt
-    
-    // Sem alt text
+  static getProcessableImageUrlsWithAlt(images: ProcessedImage[]): Array<{id: string, url: string, originalAlt?: string}> {
+    return images
+      .filter(img => ElementAnalyzer.isValidImageUrl(img.src))
+      .map(img => ({
+        id: img.id,
+        url: img.src,
+        originalAlt: img.alt
+      }))
+  }
+
+  /**
+   * Lógica consolidada para determinar se uma imagem deve ser processada
+   */
+  private static shouldProcessImage(alt?: string): boolean {
+    // Sem alt text - definitivamente processar
     if (!alt) return true
     
-    // Alt muito curto
+    // Alt muito curto - processar
     if (alt.length < 10) return true
     
-    // Alt genérico
+    // Alt genérico comum - processar  
     const genericAlts = ['image', 'img', 'photo', 'picture', 'icon', 'logo']
     if (genericAlts.some(generic => alt.toLowerCase().includes(generic))) return true
     
+    // NOVA LÓGICA: Processar imagens com alt text bom para melhorar
+    // descrições mais ricas e detalhadas
+    if (alt.length >= 10) return true
+    
     return false
+  }
+
+  /**
+   * Verifica se uma imagem deve ser processada para alt text
+   */
+  private static shouldAddAltText(element: ProcessedElement): boolean {
+    return this.shouldProcessImage(element.attributes.alt)
   }
 }

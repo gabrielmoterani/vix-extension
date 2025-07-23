@@ -8,11 +8,13 @@ import { LanguageSelector } from "./components/LanguageSelector"
 import type { BackgroundState } from "../lib/types/messaging"
 import { ChatInterface } from "./components/ChatInterface"
 import { ImageAltProgressCard } from "./components/ImageAltProgressCard"
+import { SimpleThumbnails } from "./components/ImageAnalysisCard"
 import { StatsList } from "./components/StatsList"
 import { StatusCard } from "./components/StatusCard"
 import { SummaryCard } from "./components/SummaryCard"
 import { TabsContainer } from "./components/TabsContainer"
 import { WcagIssuesCard } from "./components/WcagIssuesCard"
+import { useSimpleImages } from "./hooks/useImageAnalysis"
 
 function IndexSidePanel() {
   const { t, locale, setLocale } = useLocale()
@@ -41,6 +43,7 @@ function IndexSidePanel() {
     isProcessing: false
   })
   const [wcagIssues, setWcagIssues] = useState<any[]>([])
+  const { images, addImages, updateImageAlt, setImageStatus, clearImages } = useSimpleImages()
 
   useEffect(() => {
     // Solicitar estado inicial
@@ -86,6 +89,7 @@ function IndexSidePanel() {
                   inProgress: 0,
                   isProcessing: false
                 })
+                clearImages()
               }
               return response.state
             })
@@ -125,6 +129,15 @@ function IndexSidePanel() {
           inProgress: 0,
           isProcessing: false
         }))
+
+        // Adicionar imagens ao contexto simples
+        if (message.data.images && Array.isArray(message.data.images)) {
+          addImages(message.data.images.map((img: any) => ({
+            id: img.id,
+            url: img.url,
+            originalAlt: img.originalAlt
+          })))
+        }
       }
 
       if (message.type === "IMAGE_ALT_PROGRESS") {
@@ -135,6 +148,13 @@ function IndexSidePanel() {
           inProgress: message.data.inProgress,
           isProcessing: true
         }))
+
+        // Atualizar alts gerados individualmente
+        if (message.data.completedJobs && Array.isArray(message.data.completedJobs)) {
+          message.data.completedJobs.forEach((job: any) => {
+            updateImageAlt(job.id, job.altText, 'completed')
+          })
+        }
       }
 
       if (message.type === "IMAGE_ALT_COMPLETED") {
@@ -145,6 +165,17 @@ function IndexSidePanel() {
           inProgress: 0,
           isProcessing: false
         }))
+
+        // Processar resultados finais
+        if (message.data.results && Array.isArray(message.data.results)) {
+          message.data.results.forEach((result: any) => {
+            if (result.altText) {
+              updateImageAlt(result.id, result.altText, 'completed')
+            } else if (result.error) {
+              updateImageAlt(result.id, '', 'failed')
+            }
+          })
+        }
       }
 
       if (message.type === "WCAG_APPLY_FIXES") {
@@ -166,6 +197,14 @@ function IndexSidePanel() {
     }
 
     setImageAltState((prev) => ({ ...prev, isProcessing: true }))
+    
+    // Marcar todas as imagens como processando
+    images.forEach(img => {
+      if (img.status === 'pending') {
+        setImageStatus(img.id, 'processing')
+      }
+    })
+
     chrome.runtime.sendMessage({
       type: "IMAGE_ALT_REQUEST",
       body: {
@@ -278,6 +317,16 @@ function IndexSidePanel() {
                   onStartProcessing={handleStartImageProcessing}
                 />
                 <WcagIssuesCard issues={wcagIssues} />
+              </div>
+            )
+          },
+          {
+            id: "images",
+            label: t("tab_image_analysis"),
+            icon: "🖼️",
+            content: (
+              <div className="vix-space-y-4">
+                <SimpleThumbnails images={images} />
               </div>
             )
           }

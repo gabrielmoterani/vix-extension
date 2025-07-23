@@ -4,6 +4,7 @@ import { DomProcessor } from './dom/domProcessor'
 import { ImageExtractor } from './dom/imageExtractor'
 import { TextExtractor } from './dom/textExtractor'
 import { StatsGenerator } from './dom/statsGenerator'
+import { ElementAnalyzer } from './dom/elementAnalyzer'
 
 // Re-export types for backward compatibility
 export type { ProcessedElement, ProcessedImage, DomStats } from './dom/types'
@@ -131,9 +132,14 @@ export class DomProcessingService {
     return ImageExtractor.getProcessableImageUrls(images)
   }
 
+  // Delegated method for image analysis feature
+  getProcessableImageUrlsWithAlt(images: ProcessedImage[]): Array<{id: string, url: string, originalAlt?: string}> {
+    return ImageExtractor.getProcessableImageUrlsWithAlt(images)
+  }
+
   // Delegated method for backward compatibility
   isValidImageUrl(url: string): boolean {
-    return true // Moved to ElementAnalyzer.isValidImageUrl
+    return ElementAnalyzer.isValidImageUrl(url)
   }
 
   // Hash generation moved to DomProcessor
