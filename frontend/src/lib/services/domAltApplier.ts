@@ -36,9 +36,6 @@ export class DomAltApplier {
       // Marcar como aplicado
       this.appliedIds.add(elementId)
 
-      // Criar indicador visual
-      this.createVisualIndicator(element, altText)
-
       // Invalidate WCAG cache since accessibility has changed
       cacheManager.invalidateWcagCache()
 
@@ -82,9 +79,6 @@ export class DomAltApplier {
       if (success) {
         // Marcar como aplicado
         this.appliedBackgroundIds.add(elementId)
-
-        // Criar indicador visual para background images
-        this.createBackgroundVisualIndicator(element, altText)
 
         // Invalidate WCAG cache since accessibility has changed
         cacheManager.invalidateWcagCache()
@@ -144,6 +138,9 @@ export class DomAltApplier {
     imageElement: HTMLImageElement,
     altText: string
   ): void {
+    // Visual indicators disabled - no overlay will be created
+    return
+    
     // Verificar se já existe container
     let container = imageElement.parentElement
 
@@ -191,6 +188,9 @@ export class DomAltApplier {
    * Cria indicador visual para elementos com background-image
    */
   private createBackgroundVisualIndicator(element: Element, altText: string): void {
+    // Visual indicators disabled - no overlay will be created
+    return
+    
     // Remover indicador existente se houver
     const existingIndicator = element.querySelector(".vix-bg-alt-indicator")
     existingIndicator?.remove()
@@ -248,10 +248,13 @@ export class DomAltApplier {
    * Remove indicadores visuais de todas as imagens
    */
   removeAllIndicators(): void {
+    // Visual indicators are disabled - but clean up any existing ones for backwards compatibility
     const indicators = document.querySelectorAll(".vix-alt-indicator, .vix-bg-alt-indicator")
     indicators.forEach((indicator) => indicator.remove())
 
-    console.log(`VIX: Removidos ${indicators.length} indicadores visuais`)
+    if (indicators.length > 0) {
+      console.log(`VIX: Removidos ${indicators.length} indicadores visuais existentes`)
+    }
   }
 
   /**
