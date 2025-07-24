@@ -1,5 +1,5 @@
 {
-  "app_title": {"message": "VIX Accessibility Assistant"},
+  "app_title": {"message": "VisiAble AI"},
   "app_description": {"message": "Intelligent system to improve web accessibility"},
   "connecting": {"message": "Connecting..."},
   "dom_status": {"message": "DOM Status"},

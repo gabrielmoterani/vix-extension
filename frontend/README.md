@@ -1,4 +1,4 @@
-# VIX Browser Extension
+# VisiAble AI Browser Extension
 
 A comprehensive browser accessibility extension that helps improve web accessibility by providing automated alt text generation, WCAG compliance checking, DOM processing, and ad blocking capabilities.
 
@@ -44,7 +44,30 @@ pnpm install
 npm install
 ```
 
-### 2. Development Mode
+### 2. Environment Configuration
+
+Copy the environment template and configure your backend URL:
+
+```bash
+# Copy the environment template
+cp .env.example .env
+
+# Edit the .env file with your backend configuration
+# Default: http://localhost:8080/api
+```
+
+**Environment Variables:**
+
+- `PLASMO_PUBLIC_BACKEND_URL`: Backend API URL
+- `PLASMO_PUBLIC_BACKEND_TIMEOUT`: Request timeout in milliseconds
+
+**For Production:**
+```bash
+# Use production environment
+cp .env.production .env
+```
+
+### 3. Development Mode
 
 Start the development server:
 
@@ -58,7 +81,7 @@ npm run dev
 
 This will create a development build in the `build/chrome-mv3-dev` directory.
 
-### 3. Load Extension in Browser
+### 4. Load Extension in Browser
 
 #### For Chrome/Chromium:
 
@@ -75,9 +98,9 @@ This will create a development build in the `build/chrome-mv3-dev` directory.
 3. Click **"Load Temporary Add-on"**
 4. Select the `manifest.json` file from `build/firefox-mv2-dev` directory
 
-### 4. Using the Extension
+### 5. Using the Extension
 
-1. **Side Panel**: Click the VIX extension icon to open the side panel
+1. **Side Panel**: Click the VisiAble AI extension icon to open the side panel
 2. **Navigate to any website**: The extension will automatically:
    - Remove advertisements
    - Process the DOM for accessibility

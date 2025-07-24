@@ -91,6 +91,7 @@ export class TaskClient {
   }
 }
 
-// Instância singleton
-export const taskClient = new TaskClient('http://localhost:8080/api')
-// export const taskClient = new TaskClient('https://vix-monorepo.fly.dev/api')
+// Instância singleton usando variáveis de ambiente
+export const taskClient = new TaskClient(
+  process.env.PLASMO_PUBLIC_BACKEND_URL || 'http://localhost:8080/api'
+)
