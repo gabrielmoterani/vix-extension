@@ -108,7 +108,7 @@ export function SimpleThumbnails({ images }: SimpleThumbnailsProps) {
                   </div>
                 ) : (
                   <div className="vix-text-sm vix-text-gray-500 vix-italic">
-                    {image.status === 'failed' ? t('error_label') : 'Aguardando processamento...'}
+                    {image.status === 'failed' ? t('error_label') : 'Waiting proccess...'}
                   </div>
                 )}
               </div>

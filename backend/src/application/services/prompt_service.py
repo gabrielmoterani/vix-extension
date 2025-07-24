@@ -8,7 +8,17 @@ class PromptService:
 
     def parse_image(self, content: dict) -> Prompt:
         prompt = Prompt(prompt_type="parse_image", content=content)
-        prompt.response = self.openai_repo.process_image(content)
+        result = self.openai_repo.process_image(content)
+        
+        # Se result for um dicionário (nova estrutura), manter como está
+        # Se for string (resposta de erro ou formato antigo), converter para nova estrutura
+        if isinstance(result, dict):
+            prompt.response = result
+        else:
+            prompt.response = {
+                'originalAlt': content.get('originalAlt'),
+                'generatedAlt': result
+            }
         return prompt
 
     def wcag_check(self, content: str) -> Prompt:

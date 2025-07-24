@@ -4,7 +4,7 @@ import type { BackgroundState } from "../../lib/types/messaging"
 let backgroundState: BackgroundState & {
   summary?: string
   actionElements?: any[]
-  imagesNeedingAlt?: Array<{ id: string; url: string }>
+  imagesNeedingAlt?: Array<{ id: string; url: string; originalAlt?: string; isBackground?: boolean }>
 } = {
   currentTab: null,
   domStats: {
@@ -31,7 +31,7 @@ export const updateCurrentTab = (
 export const updatePageData = (
   summary: string,
   actionElements: any[],
-  imagesNeedingAlt: Array<{ id: string; url: string }>
+  imagesNeedingAlt: Array<{ id: string; url: string; originalAlt?: string; isBackground?: boolean }>
 ) => {
   backgroundState.summary = summary
   backgroundState.actionElements = actionElements
@@ -55,7 +55,7 @@ export const updateSummary = (summary: string) => {
 }
 
 // Função para atualizar imagens que precisam de alt text
-export const updateImagesNeedingAlt = (images: Array<{ id: string; url: string }>) => {
+export const updateImagesNeedingAlt = (images: Array<{ id: string; url: string; originalAlt?: string; isBackground?: boolean }>) => {
   backgroundState.imagesNeedingAlt = images
   if (backgroundState.domStats) {
     backgroundState.domStats.imagesNeedingAlt = images.length

@@ -172,12 +172,13 @@ export class BackgroundImageProcessor {
   /**
    * Converte elementos background para formato compatível com ImageAltService
    */
-  static toImageAltFormat(backgroundImages: BackgroundImageElement[]): Array<{id: string, url: string}> {
+  static toImageAltFormat(backgroundImages: BackgroundImageElement[]): Array<{id: string, url: string, originalAlt?: string}> {
     return backgroundImages
       .filter(img => img.needsAlt)
       .map(img => ({
         id: img.id,
-        url: img.backgroundUrl
+        url: img.backgroundUrl,
+        originalAlt: img.element.getAttribute('aria-label') || img.element.getAttribute('title') || undefined
       }))
   }
 }

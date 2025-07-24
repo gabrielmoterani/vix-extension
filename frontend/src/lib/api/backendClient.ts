@@ -22,7 +22,10 @@ export interface ImageAltRequest {
 }
 
 export interface ImageAltResponse {
-  response: string
+  response: {
+    originalAlt?: string
+    generatedAlt: string
+  }
   model?: string
 }
 
@@ -114,6 +117,7 @@ export class BackendClient {
   async requestImageAlt(
     imageUrl: string,
     summary: string,
+    originalAlt?: string,
     model: string = "o4-mini"
   ): Promise<ImageAltResponse> {
     const startTime = Date.now()
@@ -126,7 +130,7 @@ export class BackendClient {
           Accept: "application/json"
         },
         body: JSON.stringify({
-          content: { imageUrl, summary },
+          content: { imageUrl, summary, originalAlt },
           model
         }),
         signal: AbortSignal.timeout(this.config.timeout)

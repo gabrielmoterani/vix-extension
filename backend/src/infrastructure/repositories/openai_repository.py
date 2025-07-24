@@ -1,6 +1,9 @@
-from openai import OpenAI
-from config import Config
 import json
+import re
+
+from config import Config
+from openai import OpenAI
+
 
 class OpenAIRepository:
     def __init__(self):
@@ -9,31 +12,101 @@ class OpenAIRepository:
 
     def process_image(self, prompt: any, model: str = "gpt-4o-mini") -> str:
         try:
+            # Preparar informações da imagem
+            image_url = prompt['imageUrl']
+            article_summary = prompt['summary']
+            original_alt = prompt.get('originalAlt', '')
+            
+            # Criar descrição da imagem formatada para o prompt
+            img_tag_formatted = f"Image URL: {image_url}"
+            if original_alt:
+                img_tag_formatted += f"\nCurrent alt text: '{original_alt}'"
+            else:
+                img_tag_formatted += "\nCurrent alt text: None or empty"
+            
+            # Usar o prompt melhorado baseado na classe AIConfiguration
+            system_message = """You are an expert alt text generator for web accessibility. Generate concise, descriptive alt text that helps visually impaired users understand images quickly.
+
+REQUIREMENTS:
+- Maximum 2-3 sentences (not 4 paragraphs)
+- Be precise, objective, and factual
+- Focus on the most important visual elements
+- WCAG compliant
+- No additional explanations or formatting"""
+
+            user_prompt = f"""Generate concise alt text for this image:
+
+IMAGE: {img_tag_formatted}
+ARTICLE CONTEXT: {article_summary}
+
+Create alt text that describes:
+1. Main subject/scene
+2. Key visual elements
+3. Important details relevant to the context
+
+IMPORTANT: 
+- Respond with ONLY the alt text (no "Alt Text:" label or additional explanation)
+- Maximum 2-3 sentences
+- Be concise but descriptive"""
+
+            messages = [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_prompt}
+            ]
+            
             response = self.client.chat.completions.create(
                 model=model,
-                messages=[
-                    {"role": "system", "content": "You are a system that analyzes web images and generates alt text for them."},
-                    {"role": "system", "content": "You will be given the page summary so you can generate the alt text based on the content of the page."},
-                    {"role": "user", "content": prompt['summary']},
-                    {"role": "system", "content": "You will be given the url of the image, so you can generate the alt text based on the content of the page."},
-                    {"role": "user", "content": prompt['imageUrl']},
-                    {"role": "system", "content": "Generate a concise, descriptive alt text for this image, WCAG compliant. Focus on the main subject, important details, and context. The alt text should be helpful for visually impaired users."},
-                ]
+                messages=messages,
+                temperature=0.3,
+                max_tokens=150
             )
-            return response.choices[0].message.content
+            generated_alt = response.choices[0].message.content
+            
+            # Limpar a resposta removendo formatação extra
+            if generated_alt:
+                # Remove possíveis labels como "Alt Text:", "**Alt Text:**", etc.
+                generated_alt = generated_alt.strip()
+                generated_alt = re.sub(r'^(\*\*)?[Aa]lt [Tt]ext:?\s*(\*\*)?', '', generated_alt)
+                generated_alt = re.sub(r'^\*\*.*?\*\*:?\s*', '', generated_alt)
+                generated_alt = generated_alt.strip()
+            
+            # Retornar tanto o alt original quanto o gerado
+            return {
+                'originalAlt': prompt.get('originalAlt'),
+                'generatedAlt': generated_alt
+            }
         except Exception as e:
             print(f"Error calling OpenAI API: {prompt}")
-            return f"Error processing prompt: {str(prompt)}"
+            return {
+                'originalAlt': prompt.get('originalAlt'),
+                'generatedAlt': f"Error processing prompt: {str(e)}"
+            }
         
     def process_summary(self, prompt: str, model: str = "gpt-4o-mini") -> str:
         try:
+            # Usar prompt melhorado baseado na AIConfiguration
+            system_message = """You are an expert at analyzing and summarizing HTML content.
+Your tasks:
+1. Extract the main textual content from HTML, ignoring navigation, headers, footers, and other boilerplate
+2. Provide a clear, concise summary of the main content
+3. Identify and preserve key information like titles, dates, and main topics
+4. Ignore HTML tags and formatting in your summary
+Please provide summaries that are coherent and well-structured."""
+
+            user_prompt = f"""Analyze and summarize the following web page content:
+
+{prompt}
+
+Generate a concise, descriptive summary for this page. Remember to describe the page and not only the content. The summary should be helpful for visually impaired users and should be only a small paragraph focusing on the main content and purpose of the page."""
+
             response = self.client.chat.completions.create(
                 model=model,
                 messages=[
-                    {"role": "system", "content": "You are a system that summarizes web pages, you will be given a string with all extracted texts from the page and you will need to summarize it in a few sentences."},
-                    {"role": "user", "content": prompt},
-                    {"role": "system", "content": "Generate a concise, descriptive summary for this page, remeber to describe the page and not only the content. The summary should be helpful for visually impaired users. Text should be only a small paragraph."},
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": user_prompt}
                 ],
+                temperature=0,
+                max_tokens=1000
             )
             return response.choices[0].message.content
         except Exception as e:  

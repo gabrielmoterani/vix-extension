@@ -94,15 +94,19 @@ export class ImageAltService {
           `${summary}\n\nNOTA: Esta é uma imagem de background de um elemento HTML. Gere uma descrição focada no conteúdo visual da imagem.` : 
           summary
           
-        const result = await backendClient.requestImageAlt(url, contextSummary)
+        const result = await backendClient.requestImageAlt(url, contextSummary, job.originalAlt)
         
         job.status = 'completed'
-        job.altText = result.response
+        job.altText = result.response.generatedAlt
+        // Atualizar originalAlt com a informação do backend se disponível
+        if (result.response.originalAlt !== undefined) {
+          job.originalAlt = result.response.originalAlt
+        }
         
         // Cache the result with longer TTL since alt texts are expensive to generate
-        globalCache.set(cacheKey, result.response, 2 * 60 * 60 * 1000) // 2 hours
+        globalCache.set(cacheKey, result.response.generatedAlt, 2 * 60 * 60 * 1000) // 2 hours
         
-        console.log(`VIX: Alt text gerado para ${imageType} ${id}:`, result.response.substring(0, 100) + '...')
+        console.log(`VIX: Alt text gerado para ${imageType} ${id}:`, result.response.generatedAlt.substring(0, 100) + '...')
       }
       
     } catch (error) {

@@ -58,7 +58,7 @@ export const requestPageSummary = async (text: string) => {
   }
 }
 
-export const notifyImagesDetected = (images: Array<{id: string, url: string, isBackground?: boolean}>) => {
+export const notifyImagesDetected = (images: Array<{id: string, url: string, originalAlt?: string, isBackground?: boolean}>) => {
   chrome.runtime.sendMessage({
     type: "IMAGES_DETECTED",
     body: {
