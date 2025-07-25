@@ -10,12 +10,12 @@ class OpenAIRepository:
         # Initialize the OpenAI client with API key
         self.client = OpenAI(api_key=Config.OPENAI_API_KEY)
 
-    def process_image(self, prompt: any, model: str = "gpt-4o-mini") -> str:
+    def process_image(self, content: dict, model: str = "gpt-4o-mini") -> dict:
         try:
             # Preparar informações da imagem
-            image_url = prompt['imageUrl']
-            article_summary = prompt['summary']
-            original_alt = prompt.get('originalAlt', '')
+            image_url = content['imageUrl']
+            article_summary = content['summary']
+            original_alt = content.get('originalAlt', '')
             
             # Criar descrição da imagem formatada para o prompt
             img_tag_formatted = f"Image URL: {image_url}"
@@ -72,13 +72,13 @@ IMPORTANT:
             
             # Retornar tanto o alt original quanto o gerado
             return {
-                'originalAlt': prompt.get('originalAlt'),
+                'originalAlt': content.get('originalAlt'),
                 'generatedAlt': generated_alt
             }
         except Exception as e:
-            print(f"Error calling OpenAI API: {prompt}")
+            print(f"Error calling OpenAI API: {content}")
             return {
-                'originalAlt': prompt.get('originalAlt'),
+                'originalAlt': content.get('originalAlt'),
                 'generatedAlt': f"Error processing prompt: {str(e)}"
             }
         

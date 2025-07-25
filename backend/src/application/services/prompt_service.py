@@ -59,5 +59,5 @@ class PromptService:
             page_summary=page_summary
         )
         
-        print('VIX: Tarefa processada, resposta:', prompt.response[:100] + '...' if len(prompt.response) > 100 else prompt.response)
+        print('VIX: Tarefa processada, resposta:', str(prompt.response)[:100] + '...' if len(str(prompt.response)) > 100 else str(prompt.response))
         return prompt
