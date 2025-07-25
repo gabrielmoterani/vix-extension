@@ -11,8 +11,8 @@ load_dotenv()
 
 class Config:
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-    PORT = os.getenv('API_PORT')
-    DEBUG = os.getenv('FLASK_DEBUG')
+    PORT = int(os.getenv('API_PORT', 5002))
+    DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     
     # Debug logging
     logger.debug(f"OPENAI_API_KEY loaded: {'Yes' if OPENAI_API_KEY else 'No'}")

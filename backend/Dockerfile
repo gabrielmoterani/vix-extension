@@ -42,7 +42,7 @@ COPY . .
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 ENV API_PORT=5002
-ENV FLASK_DEBUG=1
+ENV FLASK_DEBUG=False
 
 # Expose the port the app runs on
 EXPOSE 5002

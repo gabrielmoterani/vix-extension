@@ -2,6 +2,7 @@ app = 'vix-extension'
 primary_region = 'ord'
 
 [build]
+  dockerfile = "Dockerfile"
 
 [env]
   API_PORT = 5002
